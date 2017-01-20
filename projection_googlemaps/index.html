@@ -1,0 +1,51 @@
+<html>
+<head>
+<title>Google Maps Projection</title>
+<style>
+#map {
+    width: 800px;
+    height: 800px;
+}
+</style>
+<script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
+</head>
+<body>
+<div id="map">
+</div>
+<script>
+var map;
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: {lat: 0, lng: 0},
+        zoom: 2,
+        mapTypeId: 'null',
+        disableDefaultUI: true
+    });
+
+    var line = new google.maps.Polyline({
+        path: [{lat:-60,lng:-60},{lat:0,lng:0}],
+        //geodesic: true,
+        strokeWeight: 2
+    });
+
+    line.setMap(map);
+    
+   map.mapTypes.set('null', {
+        tileSize: new google.maps.Size(256, 256),
+        maxZoom: 20,
+        getTile: function() {
+            // return a dummy element
+            var el = document.createElement("DIV");
+            el.style.width = '256px';
+            el.style.height = '256px';
+            el.style.backgroundColor = '#ffffff';
+            return el;
+        }
+    })
+
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCDrsgRGAhcv-lAs83WoMY7zLVYikkF-ic&callback=initMap" async defer></script>
+
+</body>
+</html>
