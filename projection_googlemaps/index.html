@@ -41,7 +41,10 @@ function initMap() {
             el.style.backgroundColor = '#ffffff';
             return el;
         }
-    })
+    });
+    
+    // test setter instrumentation
+    document.getElementById("map").style = "display: block;";
 
 }
 </script>
