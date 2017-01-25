@@ -1,0 +1,25 @@
+<html>
+<head>
+<title>Instrumentation Test</title>
+<style>
+svg path {
+    stroke-width: 1;
+    stroke: #000000;
+    fill: none;
+}
+</style>
+<script src="instrument.js"></script>
+</head>
+<body>
+<svg id="map" width="800" height="800">
+</svg>
+<script>
+var el = document.createElement("div");
+document.body.appendChild(el);
+el.style = "display: block;";
+el.style.height = "100px";
+el.style.backgroundColor = "green";
+</script>
+
+</body>
+</html>
