@@ -4,7 +4,8 @@
 
 (function() {
     
-    var filterLogPrefix = "HTMLCanvasElement.";
+    var filterLogPrefix = "";
+    //filterLogPrefix = "HTMLCanvasElement.";
     var filterObject = function(obj) {
         return false;
         return obj && obj.tagName && obj.tagName == "CANVAS";
@@ -42,14 +43,19 @@
     
     function proxySetter(obj, propName, callback) {
         var descriptor = Object.getOwnPropertyDescriptor(obj, propName);
+        if (!descriptor) {
+            console.warn("Warning: no property descriptor for " + propName + " on " + obj);
+        }
         var originalFunction = descriptor.set;
         if (!originalFunction) {
-            console.error("Warning: no property named " + propName + " on " + obj);
+            console.warn("Warning: no property named " + propName + " on " + obj);
         }
         Object.defineProperty(obj, propName, {
             set: function() {
                 callback.call(this, arguments, originalFunction);
-                originalFunction.apply(this, arguments);
+                if (originalFunction) {
+                    originalFunction.apply(this, arguments);
+                }
             }
         })
     }
@@ -68,57 +74,16 @@
     }
     
     function logAll(obj, functionNames, prefix, func) {
-        functionNames.forEach(name => proxyMethod(obj, name, logFunction(prefix + name), func));
+        functionNames.forEach(name => proxyMethod(obj, name, logFunction(prefix + name, func)));
+    }
+    
+    function logAllSetters(obj, attributeNames, prefix, func) {
+        attributeNames.forEach(name => proxySetter(obj, name, logFunction(prefix + name, func)));
     }
 
     function proxyCanvas(canvas) {
-        var canvasContext2dMethods = [
-            "addHitRegion",
-            "arc",
-            "arcTo",
-            "asyncDrawXULElement",
-            "beginPath",
-            "bezierCurveTo",
-            "clearHitRegions",
-            "clearRect",
-            "clip",
-            "closePath",
-            "createImageData",
-            "createLinearGradient",
-            "createPattern",
-            "createRadialGradient",
-            "drawFocusIfNeeded",
-            "drawImage",
-            "drawWidgetAsOnScreen",
-            "drawWindow",
-            "ellipse",
-            "fill",
-            "fillRect",
-            "fillText",
-            "getImageData",
-            "getLineDash",
-            "isPointInPath",
-            "isPointInStroke",
-            "lineTo",
-            "measureText",
-            "moveTo",
-            "putImageData",
-            "quadraticCurveTo",
-            "rect",
-            "removeHitRegion",
-            "resetTransform",
-            "restore",
-            "rotate",
-            "save",
-            "scale",
-            "scrollPathIntoView",
-            "setLineDash",
-            "setTransform",
-            "stroke",
-            "strokeRect",
-            "strokeText",
-            "transform",
-            "translate"
+        // source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+        var canvasContext2dMethods = ["addHitRegion","arc","arcTo","asyncDrawXULElement","beginPath","bezierCurveTo","clearHitRegions","clearRect","clip","closePath","createImageData","createLinearGradient","createPattern","createRadialGradient","drawFocusIfNeeded","drawImage","drawWidgetAsOnScreen","drawWindow","ellipse","fill","fillRect","fillText","getImageData","getLineDash","isPointInPath","isPointInStroke","lineTo","measureText","moveTo","putImageData","quadraticCurveTo","rect","removeHitRegion","resetTransform","restore","rotate","save","scale","scrollPathIntoView","setLineDash","setTransform","stroke","strokeRect","strokeText","transform","translate"
         ];
         /*
         {
@@ -146,11 +111,14 @@
             // arguments: tagName, options
             var tagName = arguments[0].toLowerCase();
             log("creating element: " + tagName);
+            var el = originalFunction.apply(this, arguments);
             if (tagName == "canvas") {
-                var canvas = originalFunction.apply(this, arguments);
-                proxyCanvas(canvas);
-                return canvas;
+                proxyCanvas(el);
             }
+            if (el.style) {
+                logAllSetters(el.style, cssAttributes, "CSSStyleDeclaration<set>");
+            }
+            return el;
             
         },
         "createElementNS": function(arguments, originalFunction) {
@@ -179,4 +147,8 @@
         log("style set: \"" + arguments[0] + "\" on " + this.tagName);
     });
 
+    // source: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Properties_Reference
+    var cssAttributes = ["background","backgroundAttachment","backgroundColor","backgroundImage","backgroundPosition","backgroundRepeat","border","borderBottom","borderBottomColor","borderBottomStyle","borderBottomWidth","borderColor","borderLeft","borderLeftColor","borderLeftStyle","borderLeftWidth","borderRight","borderRightColor","borderRightStyle","borderRightWidth","borderStyle","borderTop","borderTopColor","borderTopStyle","borderTopWidth","borderWidth","clear","clip","color","cursor","display","filter","font","fontFamily","fontSize","fontVariant","fontWeight","height","left","letterSpacing","lineHeight","listStyle","listStyleImage","listStylePosition","listStyleType","margin","marginBottom","marginLeft","marginRight","marginTop","overflow","padding","paddingBottom","paddingLeft","paddingRight","paddingTop","pageBreakAfter","pageBreakBefore","position","cssFloat","textAlign","textDecoration","textDecorationBlink","textDecorationLineThrough","textDecorationNone","textDecorationOverline","textDecorationUnderline","textIndent","textTransform","top","verticalAlign","visibility","width","zIndex"];
+    
+    logAllSetters(CSSStyleDeclaration.prototype, cssAttributes, "CSSStyleDeclaration<set>");
 })();
