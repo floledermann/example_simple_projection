@@ -18,7 +18,7 @@
     // ignore: "addHitRegion","asyncDrawXULElement","clearHitRegions","createImageData","drawFocusIfNeeded","drawWidgetAsOnScreen","drawWindow","getImageData","getLineDash","isPointInPath","isPointInStroke","measureText","removeHitRegion","scrollPathIntoView",
     
     var filterInclude = "";
-    //filterInclude = "Node.";
+    filterInclude = "HTMLCanvasElement.";
     var filterExclude = "";
     
     var filterObject = function(obj) {
@@ -121,11 +121,24 @@
             if (tagName == "canvas") {
                 proxyCanvas(el);
             }
+            // TODO: this seems to be not persistent - Chome seems to 
+            // randomly recreate the style object (?)
+            // try to make style a getter/setter, proxying the original style object
             if (el.style) {
-                logAllSetters(el.style, NAMES.cssAttributes, "CSSStyleDeclaration.<set>", function(arguments, propName, originalFunction) {
+                Object.getOwnPropertyDescriptor(el, "style");
+                var _style = el.style;
+                logAllSetters(_style, NAMES.cssAttributes, "CSSStyleDeclaration.<set>", function(arguments, propName, originalFunction) {
                     // convert camelcase to dashed CSS attribute
                     propName = propName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
                     this.setProperty(propName, arguments[0]);
+                });
+                Object.defineProperty(el, "style", {
+                    set: function(val) {
+                        _style.cssText = val;
+                    },
+                    get: function() {
+                        return _style;
+                    }
                 });
             }
             return el;
