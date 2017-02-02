@@ -18,17 +18,23 @@
     // ignore: "addHitRegion","asyncDrawXULElement","clearHitRegions","createImageData","drawFocusIfNeeded","drawWidgetAsOnScreen","drawWindow","getImageData","getLineDash","isPointInPath","isPointInStroke","measureText","removeHitRegion","scrollPathIntoView",
     
     var filterInclude = "";
-    filterInclude = "HTMLCanvasElement.";
+    //filterInclude = "HTMLCanvasElement.";
     var filterExclude = "";
     
     var filterObject = function(obj) {
-        return false;
         return obj && obj.tagName && obj.tagName == "CANVAS";
+    }
+    function objectToString(obj) {
+        if (!obj.tagName) return "";
+        return "[" + obj.tagName + "]";
+        // console.info(obj);
     }
     function log(str, obj) {
         if (str && (!filterInclude || str.startsWith(filterInclude))) {
+            if (obj && filterObject(obj)) {
+                str += " " + objectToString(obj);
+            }
             console.log(str);
-            if (obj && filterObject(obj)) console.info(obj);
         }
     }
     
