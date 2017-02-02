@@ -15,7 +15,7 @@
     // source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
     NAMES.canvasContext2dMethods = ["addHitRegion","arc","arcTo","asyncDrawXULElement","beginPath","bezierCurveTo","clearHitRegions","clearRect","clip","closePath","createImageData","createLinearGradient","createPattern","createRadialGradient","drawFocusIfNeeded","drawImage","drawWidgetAsOnScreen","drawWindow","ellipse","fill","fillRect","fillText","getImageData","getLineDash","isPointInPath","isPointInStroke","lineTo","measureText","moveTo","putImageData","quadraticCurveTo","rect","removeHitRegion","resetTransform","restore","rotate","save","scale","scrollPathIntoView","setLineDash","setTransform","stroke","strokeRect","strokeText","transform","translate"
     ];
-
+    
     var filterLogPrefix = "";
     //filterLogPrefix = "HTMLCanvasElement.";
     var filterObject = function(obj) {
@@ -87,8 +87,12 @@
     function logFunction(namePrefix, func) {
         return function(arguments, originalFunction) {
             // surround strings in ""
-            var args = Array.prototype.map.call(arguments, arg => (typeof arg == "string") ? ('"' + arg + '"') : arg );
-            var str = args.join(", ");
+            var strargs = Array.prototype.map.call(arguments, function(arg) {
+                if (typeof arg == "string") return '"' + arg + '"';
+                if (typeof arg == "function") return "function()...";
+                return arg;
+            });
+            var str = strargs.join(", ");
             log(namePrefix + "(" + str + ")", this);
             if (func) {
                 return func.call(this,arguments, originalFunction);
@@ -131,6 +135,22 @@
     
     proxyMethods(document, documentMethods);
     
+    /*
+    TODO: systematically proxy all DOM modifications:
+    - Node: https://developer.mozilla.org/en-US/docs/Web/API/Node
+      textContent
+      appendChild() insertBefore() removeChild() replaceChild()
+    - Element: https://developer.mozilla.org/en-US/docs/Web/API/Element
+      [data-* attributes?]
+    - HTMLElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement
+      title 
+    - TODO: check specific HTML elements, e.g. Canvas, Image
+    - SVGElement: no attributes/methods in addition to Element!
+    - TODO: check specific SVG elements
+    - EventTarget: TODO
+    */    
+
+    
     proxyMethod(EventTarget.prototype, "addEventListener", function(arguments, originalFunction) {
         // arguments: type, listener, options
         var targetName = this.tagName;
@@ -140,15 +160,23 @@
         //log("addEventListener called: " + arguments[0] + " on " + targetName);
     });
     
+    /*
     proxyMethod(Element.prototype, "setAttribute", function(arguments, originalFunction) {
         // arguments: name, value
         log("Element.setAttribute(" + arguments[0] + "," + arguments[1] + ") on " + this.tagName);
-    });
+    });*/
+    
+    logAll(Element.prototype, ["addEventListener", "dispatchEvent", "remove", "removeAttribute", "removeAttributeNS", "removeEventListener", "setAttribute", "setAttributeNS"], "Element.");
+    
+    logAllSetters(Element.prototype, ["className", "id", "innerHTML", "outerHTML"], "Element.<set>");
 
-    proxySetter(HTMLElement.prototype, "style", function(arguments, originalFunction) {
+    logAllSetters(HTMLElement.prototype, ["style", "title"], "HTMLElement.<set>");
+    /*
+    TODO: log tag name in previous function like
+    function(arguments, originalFunction) {
         log("Element.<set>style(\"" + arguments[0] + "\") on " + this.tagName);
     });
-    
+    */
     //var cssStyleDeclarationSetters = [""];
     
     //logAllSetters(CSSStyleDeclaration.prototype, NAMES.cssAttributes, "CSSStyleDeclaration.<set>");
