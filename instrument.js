@@ -13,17 +13,20 @@
     // TODO: there are more css properties defined on the style object in Chrome, check in debugger!
     
     // source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
-    NAMES.canvasContext2dMethods = ["addHitRegion","arc","arcTo","asyncDrawXULElement","beginPath","bezierCurveTo","clearHitRegions","clearRect","clip","closePath","createImageData","createLinearGradient","createPattern","createRadialGradient","drawFocusIfNeeded","drawImage","drawWidgetAsOnScreen","drawWindow","ellipse","fill","fillRect","fillText","getImageData","getLineDash","isPointInPath","isPointInStroke","lineTo","measureText","moveTo","putImageData","quadraticCurveTo","rect","removeHitRegion","resetTransform","restore","rotate","save","scale","scrollPathIntoView","setLineDash","setTransform","stroke","strokeRect","strokeText","transform","translate"
+    NAMES.canvasContext2dMethods = ["arc","arcTo","beginPath","bezierCurveTo","clearRect","clip","closePath","createLinearGradient","createPattern","createRadialGradient","drawImage","ellipse","fill","fillRect","fillText","lineTo","moveTo","putImageData","quadraticCurveTo","rect","resetTransform","restore","rotate","save","scale","setLineDash","setTransform","stroke","strokeRect","strokeText","transform","translate"
     ];
+    // ignore: "addHitRegion","asyncDrawXULElement","clearHitRegions","createImageData","drawFocusIfNeeded","drawWidgetAsOnScreen","drawWindow","getImageData","getLineDash","isPointInPath","isPointInStroke","measureText","removeHitRegion","scrollPathIntoView",
     
-    var filterLogPrefix = "";
-    //filterLogPrefix = "HTMLCanvasElement.";
+    var filterInclude = "";
+    //filterInclude = "Node.";
+    var filterExclude = "";
+    
     var filterObject = function(obj) {
         return false;
         return obj && obj.tagName && obj.tagName == "CANVAS";
     }
     function log(str, obj) {
-        if (str && (!filterLogPrefix || str.startsWith(filterLogPrefix))) {
+        if (str && (!filterInclude || str.startsWith(filterInclude))) {
             console.log(str);
             if (obj && filterObject(obj)) console.info(obj);
         }
@@ -114,6 +117,7 @@
             var tagName = arguments[0].toLowerCase();
             log("Document.createElement(" + tagName + ")");
             var el = originalFunction.apply(this, arguments);
+            el.__PROXY = true;
             if (tagName == "canvas") {
                 proxyCanvas(el);
             }
@@ -133,23 +137,7 @@
         }
     };
     
-    proxyMethods(document, documentMethods);
-    
-    /*
-    TODO: systematically proxy all DOM modifications:
-    - Node: https://developer.mozilla.org/en-US/docs/Web/API/Node
-      textContent
-      appendChild() insertBefore() removeChild() replaceChild()
-    - Element: https://developer.mozilla.org/en-US/docs/Web/API/Element
-      [data-* attributes?]
-    - HTMLElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement
-      title 
-    - TODO: check specific HTML elements, e.g. Canvas, Image
-    - SVGElement: no attributes/methods in addition to Element!
-    - TODO: check specific SVG elements
-    - EventTarget: TODO
-    */    
-
+    proxyMethods(document, documentMethods);  
     
     proxyMethod(EventTarget.prototype, "addEventListener", function(arguments, originalFunction) {
         // arguments: type, listener, options
@@ -160,29 +148,43 @@
         //log("addEventListener called: " + arguments[0] + " on " + targetName);
     });
     
-    /*
-    proxyMethod(Element.prototype, "setAttribute", function(arguments, originalFunction) {
-        // arguments: name, value
-        log("Element.setAttribute(" + arguments[0] + "," + arguments[1] + ") on " + this.tagName);
-    });*/
+    // Proxy all methods and attributes on DOM prototypes that may change the DOM
     
+    // Node: https://developer.mozilla.org/en-US/docs/Web/API/Node
+    
+    logAll(Node.prototype, ["appendChild", "insertBefore", "removeChild", "replaceChild", "cloneNode"], "Node.");
+    
+    logAllSetters(Node.prototype, ["textContent"], "Node.<set>");
+
+    // Element: https://developer.mozilla.org/en-US/docs/Web/API/Element
+    // TODO: data-* attributes?
+
     logAll(Element.prototype, ["addEventListener", "dispatchEvent", "remove", "removeAttribute", "removeAttributeNS", "removeEventListener", "setAttribute", "setAttributeNS"], "Element.");
     
     logAllSetters(Element.prototype, ["className", "id", "innerHTML", "outerHTML"], "Element.<set>");
+    
+    // HTMLElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement    
 
     logAllSetters(HTMLElement.prototype, ["style", "title"], "HTMLElement.<set>");
     /*
-    TODO: log tag name in previous function like
+    TODO: log tag name in previous function like so?
     function(arguments, originalFunction) {
         log("Element.<set>style(\"" + arguments[0] + "\") on " + this.tagName);
     });
     */
-    //var cssStyleDeclarationSetters = [""];
     
-    //logAllSetters(CSSStyleDeclaration.prototype, NAMES.cssAttributes, "CSSStyleDeclaration.<set>");
+    // CSSStyleDeclaration
     
     logAll(CSSStyleDeclaration.prototype, ["setProperty", "removeProperty"], "CSSStyleDeclaration.")
     logAllSetters(CSSStyleDeclaration.prototype, ["cssText"], "CSSStyleDeclaration.<set>")
+
+    /*
+    TODO: systematically proxy all DOM modifications:
+    - TODO: check specific HTML elements, e.g. Canvas, Image
+    - TODO: check specific SVG elements (SVGElement has no methods/properties over Element)
+    - TODO: EventTarget
+    */    
+
     
     function proxyCanvas(canvas) {
         /*
