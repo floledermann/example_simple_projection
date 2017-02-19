@@ -2,6 +2,10 @@
 <head>
 <title>D3 Projection</title>
 <style>
+svg {
+    background-color: #eee;
+    border: 1px solid #999;
+}
 svg path {
     stroke-width: 1;
     stroke: #000000;
@@ -12,19 +16,21 @@ svg path {
 <script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
 </head>
 <body>
-<svg id="map" width="800" height="800">
+<svg id="map" width="512" height="512">
 </svg>
 <script>
+var svg = d3.select("#map");
+var WIDTH = +svg.attr("width"),
+    HEIGHT = +svg.attr("height");
+
 var geom = {
     type: "LineString",
-    coordinates: [[0,-60],[0,0]]
+    coordinates: [[16.4, 48.2],[-74, 40.7]]
 };
-var projection = d3.geo.mercator();
+var projection = d3.geo.mercator().scale(WIDTH / (2 * Math.PI)).translate([WIDTH/2,HEIGHT/2]);
 var xy = projection(geom.coordinates[0]);
 
 var path = d3.geo.path().projection(projection);
-
-var svg = d3.select("#map");
 
 svg.append("path")
     .datum(geom)

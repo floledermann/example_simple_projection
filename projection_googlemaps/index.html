@@ -3,8 +3,10 @@
 <title>Google Maps Projection</title>
 <style>
 #map {
-    width: 800px;
-    height: 800px;
+    width: 512px;
+    height: 512px;
+    background-color: #eee;
+    border: 1px solid #999;
 }
 </style>
 <script src="../instrument.js"></script>
@@ -17,13 +19,13 @@ var map;
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: 0, lng: 0},
-        zoom: 2,
+        zoom: 1,
         //mapTypeId: 'null',
         disableDefaultUI: true
     });
 
     var line = new google.maps.Polyline({
-        path: [{lat:-60,lng:-60},{lat:0,lng:0}],
+        path: [{lat:48.2,lng:16.4},{lat:40.7,lng:-74}],
         //geodesic: true,
         strokeWeight: 2
     });
