@@ -27,6 +27,9 @@ var geom = {
 
 var drawingContext = canvas.getContext("2d");
 
+// hack
+window.logAll(drawingContext, NAMES.canvasContext2dMethods, "HTMLCanvasElement.CanvasRenderingContext2D.");
+
 var xy1 = canvas_coords(project_mercator(geom.coordinates[0]));
 var xy2 = canvas_coords(project_mercator(geom.coordinates[1]));
 

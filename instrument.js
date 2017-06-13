@@ -226,5 +226,9 @@
             }
         }));
     }
+    
+    // HACK - remove when canvas defined in HTML is instrumented
+    window.logAll = logAll;
+    window.NAMES = NAMES;
 
 })();
